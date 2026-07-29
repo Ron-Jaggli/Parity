@@ -29,63 +29,18 @@ jobs:
       # assets, so these are the real assemblies - the mod's use of that API is
       # genuinely type-checked. The IL2CPP game assemblies are not obtainable
       # here and are stood in for by refs/. See refs/README.md.
+      #
+      # This is the same script scripts/build.sh uses locally, so CI and a
+      # developer machine cannot drift on which MelonLoader is used.
       - name: Fetch MelonLoader
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/ml"
-          cd "$RUNNER_TEMP/ml"
-
-          echo "Resolving MelonLoader $MELONLOADER_TAG"
-          if ! curl -fsSL \
-              -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/LavaGang/MelonLoader/releases/tags/$MELONLOADER_TAG" \
-              -o release.json; then
-            echo "::error::MelonLoader release '$MELONLOADER_TAG' not found. Re-run this workflow via workflow_dispatch with a tag that exists at https://github.com/LavaGang/MelonLoader/releases"
-            exit 1
-          fi
-
-          echo "Assets in $MELONLOADER_TAG:"
-          jq -r '.assets[] | "  " + .name' release.json
-
-          # Prefer the canonical Windows x64 archive, then anything x64-ish.
-          url=$(jq -r '[.assets[] | select(.name | test("^MelonLoader\\.x64\\.zip$"; "i"))][0].browser_download_url // empty' release.json)
-          if [ -z "$url" ]; then
-            url=$(jq -r '[.assets[] | select(.name | test("x64.*\\.zip$"; "i"))][0].browser_download_url // empty' release.json)
-          fi
-          if [ -z "$url" ]; then
-            echo "::error::No x64 .zip asset in MelonLoader $MELONLOADER_TAG (assets listed above)."
-            exit 1
-          fi
-
-          echo "Downloading $url"
-          curl -fsSL -o melonloader.zip "$url"
-          unzip -q melonloader.zip -d extracted
-
-          # net6 build only; 0.6.x archives also ship a net35 MelonLoader.dll.
-          dll=$(find extracted -type f -name MelonLoader.dll -path '*net6*' | head -1)
-          if [ -z "$dll" ]; then
-            dll=$(find extracted -type f -name MelonLoader.dll | head -1)
-          fi
-          if [ -z "$dll" ]; then
-            echo "::error::MelonLoader.dll not found in the release archive. Contents:"
-            find extracted -name '*.dll' | head -50
-            exit 1
-          fi
-
-          # Must be absolute: the build step runs from the workspace, not here.
-          dir=$(cd "$(dirname "$dll")" && pwd)
-          if [ ! -f "$dir/Il2CppInterop.Runtime.dll" ]; then
-            echo "::error::Il2CppInterop.Runtime.dll is not alongside MelonLoader.dll in $dir. Found:"
-            find extracted -name 'Il2CppInterop*' | head -20
-            exit 1
-          fi
-
-          echo "Using MelonLoader assemblies from $dir"
-          ls -la "$dir"
-          echo "MELON_DIR=$dir" >> "$GITHUB_ENV"
+          melon_dir=$(python3 scripts/fetch_melonloader.py \
+            --tag "$MELONLOADER_TAG" \
+            --dest "$RUNNER_TEMP/ml")
+          echo "MELON_DIR=$melon_dir" >> "$GITHUB_ENV"
 
       - name: Build
         run: |

@@ -13,6 +13,10 @@ Libs/
 *.dll
 *.pdb
 
+# MelonLoader, downloaded by scripts/build.sh. Freely redistributable, but
+# there is no reason to carry a copy in the repository.
+.melonloader/
+
 # IDE
 .vs/
 .idea/

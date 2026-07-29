@@ -169,26 +169,70 @@ other than `Parity.dll` ends up in the output folder.
 
 ### Locally
 
-Only useful if you have BONELAB on a PC — the reference assemblies exist
-precisely so that a Quest-only setup does not need this. With the game
-installed, the real assemblies are used automatically:
-
 ```bash
-dotnet build src/Parity.csproj -c Release
-dotnet build src/Parity.csproj -c Release -p:BonelabDir="D:\Games\BONELAB"
+./scripts/build.sh
 ```
 
-Or copy these into a top-level `Libs/` folder, which takes precedence and is
-gitignored:
+That fetches MelonLoader on first run, caches it in `.melonloader/`, builds, and
+prints the resulting assembly references. Output lands in
+`src/bin/Release/Parity.dll`. It needs `dotnet` and `python3` and nothing else —
+no `jq`, no `unzip`.
 
-- From `BONELAB/MelonLoader/net6/`: `MelonLoader.dll`, `Il2CppInterop.Runtime.dll`
-- From `BONELAB/MelonLoader/Il2CppAssemblies/`: `Il2Cppmscorlib.dll`,
-  `UnityEngine.CoreModule.dll`, `UnityEngine.PhysicsModule.dll`,
-  `UnityEngine.AnimationModule.dll`, `UnityEngine.AudioModule.dll`,
-  `UnityEngine.VRModule.dll`
+#### Getting the .NET SDK on an immutable distro
 
-The build prints which of the two it used. Output lands in
-`src/bin/Release/Parity.dll`.
+On Bazzite, Silverblue, Steam Deck and friends, do **not** reach for
+`rpm-ostree install` — layering a package onto the base image for one build is a
+reboot and a permanent tax. Install the SDK into your home directory instead:
+
+```bash
+curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "$HOME/.dotnet"
+
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$HOME/.dotnet:$PATH"        # add both to ~/.bashrc to persist
+```
+
+The mod targets `net6.0`, but a newer SDK builds it fine — CI uses .NET 10. If
+you would rather keep it out of `$HOME` entirely, Bazzite ships `distrobox`, and
+a throwaway Fedora container with `dotnet-sdk-8.0` inside works just as well.
+
+### Building against your own headset's assemblies
+
+This is worth doing once, and it is the one thing that closes the gap described
+under [Status](#status).
+
+When LemonLoader first patches BONELAB, it generates IL2CPP interop assemblies
+from *your* copy of the game. Those are the assemblies the mod will actually
+bind against at runtime. Build against them and every Unity call is checked for
+real, rather than against the hand-written shapes in `refs/`:
+
+```bash
+adb pull /sdcard/Android/data/com.StressLevelZero.BONELAB/files/MelonLoader/Il2CppAssemblies ~/bonelab-asm
+IL2CPP_DIR=~/bonelab-asm ./scripts/build.sh
+```
+
+The exact path depends on your LemonLoader version — find the folder containing
+`UnityEngine.CoreModule.dll` and point at that. If the build succeeds, every
+member this mod touches exists in your build of the game, and the only thing
+left to find out is whether the optimisations help.
+
+If it fails, that is a genuinely useful result: it names exactly which call
+differs on Quest, and it is a much better way to learn that than a line in
+`Latest.log` after the fact.
+
+Never commit those files — they are derived from the game. `Libs/` and `*.dll`
+are gitignored for that reason.
+
+### Building against a PC install
+
+If you also have BONELAB on a PC, the real assemblies are picked up
+automatically:
+
+```bash
+dotnet build src/Parity.csproj -c Release -p:BonelabDir="/path/to/BONELAB"
+```
+
+The build prints which reference source it used.
 
 ---
 
