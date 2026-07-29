@@ -55,7 +55,7 @@ namespace Parity
                 ApplyAll();
             }
 
-            ParityLog.Info("Parity " + BuildInfo.Version + " loaded. " + DescribeActiveTweaks());
+            ParityLog.Info("Parity " + ParityBuildInfo.Version + " loaded. " + DescribeActiveTweaks());
         }
 
         public override void OnSceneWasInitialized(int buildIndex, string sceneName)

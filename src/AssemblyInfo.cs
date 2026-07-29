@@ -1,12 +1,12 @@
 using MelonLoader;
 using Parity;
 
-[assembly: MelonInfo(typeof(ParityMod), BuildInfo.Name, BuildInfo.Version, BuildInfo.Author)]
+[assembly: MelonInfo(typeof(ParityMod), ParityBuildInfo.Name, ParityBuildInfo.Version, ParityBuildInfo.Author)]
 [assembly: MelonGame("Stress Level Zero", "BONELAB")]
 
 namespace Parity
 {
-    internal static class BuildInfo
+    internal static class ParityBuildInfo
     {
         public const string Name = "Parity";
         public const string Version = "1.0.0";

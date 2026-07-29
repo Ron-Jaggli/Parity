@@ -30,7 +30,7 @@ namespace Parity
             }
             else
             {
-                MelonLogger.Msg(BuildInfo.LogPrefix + message);
+                MelonLogger.Msg(ParityBuildInfo.LogPrefix + message);
             }
         }
 
@@ -42,7 +42,7 @@ namespace Parity
             }
             else
             {
-                MelonLogger.Warning(BuildInfo.LogPrefix + message);
+                MelonLogger.Warning(ParityBuildInfo.LogPrefix + message);
             }
         }
 
