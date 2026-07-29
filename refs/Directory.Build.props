@@ -1,0 +1,25 @@
+<Project>
+
+  <!--
+    Shared settings for the reference assemblies. See refs/README.md.
+
+    GenerateAssemblyInfo is off so these come out as version 0.0.0.0, matching
+    the Unity module assemblies they stand in for.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DebugType>none</DebugType>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <!--
+      CS0660/CS0661: operator ==/!= without overriding Equals/GetHashCode. Real
+      UnityEngine.Object does override them; these references do not need to.
+    -->
+    <NoWarn>$(NoWarn);CS0660;CS0661</NoWarn>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    MelonDir is supplied by the consuming build (see src/Parity.csproj). Global
+    properties passed with -p: propagate into project references, so CI's
+    downloaded MelonLoader lands here too.
+  -->
+  <ItemGroup>
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>$(MelonDir)\Il2CppInterop.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

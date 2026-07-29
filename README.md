@@ -105,21 +105,37 @@ rather than the loading hitch.
 
 ## Building
 
-The mod references assemblies from your BONELAB install, which are copyrighted
-and therefore not vendored in this repository.
+### On GitHub (no PC needed)
+
+Every push builds on GitHub Actions and uploads `Parity.dll` as an artifact —
+open the run under the **Actions** tab and download it from the Artifacts
+section at the bottom. You can also start a build manually from that tab
+(**Build** → **Run workflow**), which lets you pick a different MelonLoader
+release tag if the pinned one goes stale.
+
+CI cannot use the real IL2CPP game assemblies — MelonLoader generates those from
+your own copy of BONELAB and they are not redistributable. It downloads the real
+`MelonLoader.dll` and `Il2CppInterop.Runtime.dll` from MelonLoader's releases,
+and compiles the Unity surface against the reference assemblies in
+[`refs/`](refs/README.md), which carry the real assembly names and signatures so
+the emitted IL binds correctly at runtime.
+
+Because that binding is the load-bearing assumption, the workflow checks it
+rather than trusting it: after building, it reads the assembly references out of
+`Parity.dll` and fails if any expected name is missing, and it fails if anything
+other than `Parity.dll` ends up in the output folder.
+
+### Locally
+
+With BONELAB installed, the real assemblies are used automatically:
 
 ```bash
 dotnet build src/Parity.csproj -c Release
-```
-
-If BONELAB is not at the default Steam path:
-
-```bash
 dotnet build src/Parity.csproj -c Release -p:BonelabDir="D:\Games\BONELAB"
 ```
 
-Alternatively, copy these into a top-level `Libs/` folder, which takes
-precedence and is gitignored:
+Or copy these into a top-level `Libs/` folder, which takes precedence and is
+gitignored:
 
 - From `BONELAB/MelonLoader/net6/`: `MelonLoader.dll`, `Il2CppInterop.Runtime.dll`
 - From `BONELAB/MelonLoader/Il2CppAssemblies/`: `Il2Cppmscorlib.dll`,
@@ -127,7 +143,8 @@ precedence and is gitignored:
   `UnityEngine.AnimationModule.dll`, `UnityEngine.AudioModule.dll`,
   `UnityEngine.VRModule.dll`
 
-Output lands in `src/bin/Release/Parity.dll`.
+The build prints which of the two it used. Output lands in
+`src/bin/Release/Parity.dll`.
 
 ---
 
@@ -161,9 +178,18 @@ Three conventions worth knowing if you extend this:
 
 ## Status
 
-Written against MelonLoader 0.6.x and Unity 2021.3 APIs. **It has not been
-compiled or run against a real BONELAB install** — see the build instructions
-above. Treat the first launch as the real test, and check the MelonLoader
-console: any engine call that does not exist in your build is caught, reported
-once by name, and skipped, so a mismatch degrades a single tweak rather than
-taking down the mod.
+Written against MelonLoader 0.6.x and Unity 2021.3.
+
+**What is verified:** CI compiles the mod on every push, against the real
+MelonLoader and Il2CppInterop assemblies, and checks that the output binds to
+the game's assemblies by the right names.
+
+**What is not:** it has not been run in BONELAB, and the Unity side is checked
+against reference assemblies rather than the interop assemblies IL2CPP produced
+for your build of the game. If a member differs there, it shows up at runtime
+rather than at compile time.
+
+That gap is handled by design rather than by hope: every engine call runs behind
+an exception guard that reports a failing call site once by name and then skips
+it. A mismatch costs you one optimisation and a line in the MelonLoader console,
+not the mod. So treat the first launch as the real test — and read that console.

@@ -15,69 +15,118 @@
   </PropertyGroup>
 
   <!--
-    Reference resolution.
+    Reference resolution, in order of preference.
 
-    By default we pull assemblies straight out of a BONELAB install. Override the
-    game location on the command line if yours lives elsewhere:
+    MelonLoader.dll and Il2CppInterop.Runtime.dll:
+      1. Libs/          - drop them here if you like
+      2. BonelabDir     - your game install (default)
+      3. -p:MelonDir=   - explicit override; this is what CI uses, pointing at
+                          the MelonLoader release it downloaded
 
-        dotnet build -c Release -p:BonelabDir="D:\Games\BONELAB"
+    The IL2CPP game assemblies (UnityEngine.*, Il2Cppmscorlib):
+      1. Libs/
+      2. BonelabDir
+      3. refs/          - hand-written reference assemblies, used automatically
+                          when the game is not present. See refs/README.md for
+                          what a build against these does and does not prove.
 
-    Alternatively, drop the assemblies listed in README.md into a top-level
-    Libs/ folder and they will be preferred over the game install. Those files
-    are copyrighted, so Libs/ is gitignored.
+    Examples:
+      dotnet build src/Parity.csproj -c Release
+      dotnet build src/Parity.csproj -c Release -p:BonelabDir="D:\Games\BONELAB"
+      dotnet build src/Parity.csproj -c Release -p:UseReferenceAssemblies=true
   -->
   <PropertyGroup>
     <BonelabDir Condition="'$(BonelabDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\BONELAB</BonelabDir>
+    <LocalLibs>$(MSBuildProjectDirectory)/../Libs</LocalLibs>
+    <RefsDir>$(MSBuildProjectDirectory)/../refs</RefsDir>
 
-    <LocalLibs>$(MSBuildProjectDirectory)\..\Libs</LocalLibs>
-    <UseLocalLibs Condition="Exists('$(LocalLibs)')">true</UseLocalLibs>
+    <MelonDir Condition="'$(MelonDir)' == '' And Exists('$(LocalLibs)/MelonLoader.dll')">$(LocalLibs)</MelonDir>
+    <MelonDir Condition="'$(MelonDir)' == ''">$(BonelabDir)/MelonLoader/net6</MelonDir>
 
-    <MelonDir Condition="'$(UseLocalLibs)' == 'true'">$(LocalLibs)</MelonDir>
-    <MelonDir Condition="'$(UseLocalLibs)' != 'true'">$(BonelabDir)\MelonLoader\net6</MelonDir>
+    <Il2CppDir Condition="'$(Il2CppDir)' == '' And Exists('$(LocalLibs)/UnityEngine.CoreModule.dll')">$(LocalLibs)</Il2CppDir>
+    <Il2CppDir Condition="'$(Il2CppDir)' == ''">$(BonelabDir)/MelonLoader/Il2CppAssemblies</Il2CppDir>
 
-    <Il2CppDir Condition="'$(UseLocalLibs)' == 'true'">$(LocalLibs)</Il2CppDir>
-    <Il2CppDir Condition="'$(UseLocalLibs)' != 'true'">$(BonelabDir)\MelonLoader\Il2CppAssemblies</Il2CppDir>
+    <UseReferenceAssemblies Condition="'$(UseReferenceAssemblies)' == '' And !Exists('$(Il2CppDir)/UnityEngine.CoreModule.dll')">true</UseReferenceAssemblies>
+    <UseReferenceAssemblies Condition="'$(UseReferenceAssemblies)' == ''">false</UseReferenceAssemblies>
   </PropertyGroup>
 
+  <!-- MelonLoader and Il2CppInterop are always real assemblies. -->
   <ItemGroup>
     <Reference Include="MelonLoader">
-      <HintPath>$(MelonDir)\MelonLoader.dll</HintPath>
+      <HintPath>$(MelonDir)/MelonLoader.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Il2CppInterop.Runtime">
-      <HintPath>$(MelonDir)\Il2CppInterop.Runtime.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Il2Cppmscorlib">
-      <HintPath>$(Il2CppDir)\Il2Cppmscorlib.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(Il2CppDir)\UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>$(Il2CppDir)\UnityEngine.PhysicsModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>$(Il2CppDir)\UnityEngine.AnimationModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.AudioModule">
-      <HintPath>$(Il2CppDir)\UnityEngine.AudioModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.VRModule">
-      <HintPath>$(Il2CppDir)\UnityEngine.VRModule.dll</HintPath>
+      <HintPath>$(MelonDir)/Il2CppInterop.Runtime.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
 
-  <Target Name="WarnOnMissingRefs" BeforeTargets="ResolveAssemblyReferences">
-    <Warning
-      Condition="!Exists('$(MelonDir)\MelonLoader.dll')"
-      Text="MelonLoader.dll not found under '$(MelonDir)'. Set -p:BonelabDir=... or populate Libs/ (see README.md)." />
+  <ItemGroup Condition="'$(UseReferenceAssemblies)' != 'true'">
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>$(Il2CppDir)/Il2Cppmscorlib.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(Il2CppDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(Il2CppDir)/UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(Il2CppDir)/UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>$(Il2CppDir)/UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.VRModule">
+      <HintPath>$(Il2CppDir)/UnityEngine.VRModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!--
+    Private=false keeps these out of the output folder: they are compile-time
+    shapes only and must never be shipped alongside the mod, where they would
+    shadow the game's real assemblies.
+  -->
+  <ItemGroup Condition="'$(UseReferenceAssemblies)' == 'true'">
+    <ProjectReference Include="$(RefsDir)/Il2Cppmscorlib/Il2Cppmscorlib.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(RefsDir)/UnityEngine.CoreModule/UnityEngine.CoreModule.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(RefsDir)/UnityEngine.PhysicsModule/UnityEngine.PhysicsModule.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(RefsDir)/UnityEngine.AnimationModule/UnityEngine.AnimationModule.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(RefsDir)/UnityEngine.AudioModule/UnityEngine.AudioModule.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(RefsDir)/UnityEngine.VRModule/UnityEngine.VRModule.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Target Name="ReportReferenceSource" BeforeTargets="CoreCompile">
+    <Error
+      Condition="!Exists('$(MelonDir)/MelonLoader.dll')"
+      Text="MelonLoader.dll not found under '$(MelonDir)'. Point -p:BonelabDir at your game install, populate Libs/, or pass -p:MelonDir explicitly. See README.md." />
+    <Message
+      Condition="'$(UseReferenceAssemblies)' == 'true'"
+      Importance="high"
+      Text="Parity: building against hand-written reference assemblies in refs/ - the game's IL2CPP assemblies were not found. See refs/README.md." />
+    <Message
+      Condition="'$(UseReferenceAssemblies)' != 'true'"
+      Importance="high"
+      Text="Parity: building against the game's IL2CPP assemblies in '$(Il2CppDir)'." />
   </Target>
 
 </Project>
