@@ -12,6 +12,13 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <DebugType>none</DebugType>
     <Optimize>true</Optimize>
+
+    <!--
+      MelonLoader resolves a mod's dependencies itself, so a deps.json next to
+      the DLL is dead weight. Suppressing it also keeps the output folder to
+      exactly one file, which CI asserts.
+    -->
+    <GenerateDependencyFile>false</GenerateDependencyFile>
   </PropertyGroup>
 
   <!--

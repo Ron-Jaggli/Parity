@@ -75,7 +75,8 @@ jobs:
             exit 1
           fi
 
-          dir=$(dirname "$dll")
+          # Must be absolute: the build step runs from the workspace, not here.
+          dir=$(cd "$(dirname "$dll")" && pwd)
           if [ ! -f "$dir/Il2CppInterop.Runtime.dll" ]; then
             echo "::error::Il2CppInterop.Runtime.dll is not alongside MelonLoader.dll in $dir. Found:"
             find extracted -name 'Il2CppInterop*' | head -20
