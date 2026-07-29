@@ -89,9 +89,22 @@ if [ -z "$remote" ]; then
       echo "       Deeper listing:" >&2
       shell ls -R "$files_dir" 2>/dev/null | head -60 | sed 's/^/         /' >&2
     else
-      echo "       No LemonLoader folders here, so BONELAB has most likely not" >&2
-      echo "       been patched yet. Run the LemonLoader installer app on the" >&2
-      echo "       headset and point it at BONELAB." >&2
+      echo "       No MelonLoader or UserData folder, so BONELAB has most likely" >&2
+      echo "       not been patched yet. Run the LemonLoader installer app on" >&2
+      echo "       the headset and point it at BONELAB." >&2
+      echo >&2
+
+      # A managed DLL anywhere under files/ means some code-mod setup exists
+      # after all, just not where this script looked. Worth knowing before
+      # being told to install a loader that may already be there.
+      echo "       Checking for any managed assemblies elsewhere under files/..." >&2
+      stray=$(shell find "$files_dir" -name '*.dll' 2>/dev/null | head -20 || true)
+      if [ -n "$stray" ]; then
+        echo "       Found these, which suggests a loader is installed somewhere:" >&2
+        echo "$stray" | sed 's/^/         /' >&2
+      else
+        echo "       None found - consistent with an unpatched game." >&2
+      fi
     fi
   fi
   exit 1
