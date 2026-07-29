@@ -65,28 +65,33 @@ if [ -z "$remote" ]; then
   echo "error: $marker is not anywhere under $pkg_dir." >&2
   echo >&2
 
-  # Show what is actually there rather than making the reader go and look.
-  contents=$(shell ls -A "$pkg_dir" 2>/dev/null || true)
+  # Look inside files/, not at the package root. Every Android app has exactly
+  # "cache" and "files" at the root whether or not it has been modded, so the
+  # root tells you nothing; LemonLoader's output lands under files/.
+  files_dir="$pkg_dir/files"
+  contents=$(shell ls -A "$files_dir" 2>/dev/null || true)
+
   if [ -z "$contents" ]; then
-    echo "       $pkg_dir is empty or unreadable, which means BONELAB has not" >&2
-    echo "       been patched by LemonLoader yet - an unpatched game does not" >&2
-    echo "       create this." >&2
+    echo "       $files_dir is empty or unreadable." >&2
+    echo "       If BONELAB has been launched at least once, this should not be" >&2
+    echo "       empty - so this may be scoped storage refusing the read rather" >&2
+    echo "       than the directory genuinely being bare." >&2
   else
-    echo "       $pkg_dir contains:" >&2
+    echo "       $files_dir contains:" >&2
     echo "$contents" | sed 's/^/         /' >&2
     echo >&2
-    if echo "$contents" | grep -qi 'melonloader\|mods\|userdata'; then
-      echo "       LemonLoader has been here, so the patch worked - but the" >&2
-      echo "       interop assemblies are generated on the *first launch* of" >&2
-      echo "       the patched game, not by patching. Launch BONELAB once," >&2
-      echo "       let it reach the menu, quit, and run this again." >&2
+    if echo "$contents" | grep -qi 'melonloader\|^mods$\|userdata'; then
+      echo "       LemonLoader output is present, so the patch worked. What is" >&2
+      echo "       missing is the interop assemblies, which are generated on the" >&2
+      echo "       *first launch* of the patched game rather than by patching." >&2
+      echo "       Launch BONELAB, let it reach the menu, quit, and try again." >&2
       echo >&2
       echo "       Deeper listing:" >&2
-      shell ls -R "$pkg_dir" 2>/dev/null | head -60 | sed 's/^/         /' >&2
+      shell ls -R "$files_dir" 2>/dev/null | head -60 | sed 's/^/         /' >&2
     else
-      echo "       Nothing here looks like LemonLoader output, so BONELAB has" >&2
-      echo "       most likely not been patched yet. Run the LemonLoader" >&2
-      echo "       installer app on the headset and point it at BONELAB." >&2
+      echo "       No LemonLoader folders here, so BONELAB has most likely not" >&2
+      echo "       been patched yet. Run the LemonLoader installer app on the" >&2
+      echo "       headset and point it at BONELAB." >&2
     fi
   fi
   exit 1
