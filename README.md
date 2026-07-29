@@ -58,7 +58,7 @@ These are the ones that are safe to just leave alone.
 
 | Optimisation | What it does | Why it is invisible |
 |---|---|---|
-| **VR occlusion mesh** | Enables the headset's stencil mask so the GPU stops shading the corners of each eye texture. | The masked pixels sit outside the lens area. No human has ever seen them. Typically ~10–17% of fragment work depending on headset. |
+| **VR occlusion mesh** | Asks Unity to enable the headset's stencil mask so the GPU stops shading the corners of each eye texture. | The masked pixels sit outside the lens area. No human has ever seen them. See the caveat below. |
 | **Log stack trace stripping** | Stops Unity capturing a managed stack trace for every `Debug.Log` and `Debug.LogWarning`. | A stack walk plus string building, per call, on the calling thread — and it draws nothing. Errors, asserts and exceptions keep their traces, so crash logs stay useful. |
 | **Collision callback reuse** | Reuses one `Collision` object across callbacks instead of allocating a fresh one per contact. | Same collisions, same physics. Removes a major source of garbage in a game built on physics, which means fewer GC pauses. |
 | **Offscreen animator culling** | Switches animators to `CullUpdateTransforms` so offscreen skeletons skip transform writes, IK and retargeting. | State machines still tick and animation events still fire, so scripted behaviour is unaffected. Only work on invisible skeletons is skipped, and Unity resumes on the frame the object becomes visible. |
@@ -66,6 +66,16 @@ These are the ones that are safe to just leave alone.
 | **Async upload buffer** | Grows Unity's texture/mesh upload ring buffer from 4 MB to 8 MB and keeps it resident. | Same assets at the same quality, moved to the GPU in fewer steps. Fewer hitches walking into a new area. |
 | **GC and asset unload on scene load** | Forces a collection and releases unreferenced assets while the loading screen is up. | Never runs during play. The point is *when* the pause lands, not whether it happens. |
 | **Frame time telemetry** | Logs frame time percentiles to MelonLoader's log file every 2 minutes. | Log file only. Deliberately not an on-screen counter — that would break the premise and cost frames of its own. |
+
+#### On the occlusion mesh
+
+This is the one entry above whose payoff is least certain on Quest. On PC VR it
+is worth roughly 10–17% of fragment work. On Quest the stencil mask is largely
+the runtime's business, so `XRSettings.useOcclusionMesh` may already be on, or
+may do nothing at all. Parity treats it accordingly: it never turns the setting
+*off* if the game had it on, and it logs `VR occlusion mesh was already enabled
+by the game - nothing to gain here` when there is nothing to do. Check the log
+before counting on this one.
 
 #### On the delta time clamp
 
