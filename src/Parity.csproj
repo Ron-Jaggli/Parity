@@ -19,6 +19,13 @@
       exactly one file, which CI asserts.
     -->
     <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <!--
+      net6.0 is out of support and the SDK says so on every build. It is not a
+      choice: MelonLoader runs mods on .NET 6, so this is the target whether or
+      not Microsoft still ships security updates for it.
+    -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
   <!--

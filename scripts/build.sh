@@ -64,5 +64,5 @@ echo
 echo "Built $output"
 echo
 echo "Assembly references:"
-dotnet run --project tools/DumpRefs --configuration Release -- "$output" \
+dotnet run --project tools/DumpRefs --configuration Release --verbosity quiet --nologo -- "$output" \
   MelonLoader,Il2CppInterop.Runtime,Il2Cppmscorlib,UnityEngine.CoreModule,UnityEngine.PhysicsModule,UnityEngine.AnimationModule,UnityEngine.AudioModule,UnityEngine.VRModule

@@ -6,6 +6,22 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>DumpRefs</AssemblyName>
+
+    <!--
+      An SDK can build net6.0 while having no net6.0 *runtime* installed - the
+      reference pack comes from NuGet, the runtime does not. Installing the .NET
+      8 SDK and running this tool is exactly that case, and without roll-forward
+      it fails with "You must install or update .NET to run this application".
+      LatestMajor lets it run on whatever runtime is actually present.
+    -->
+    <RollForward>LatestMajor</RollForward>
+
+    <!--
+      net6.0 is out of support, but Parity has to target it because that is what
+      MelonLoader runs mods on, and this tool matches so the whole repo builds
+      with a single SDK. The warning is telling us something we already decided.
+    -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
 </Project>
