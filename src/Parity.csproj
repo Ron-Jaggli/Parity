@@ -133,6 +133,17 @@
     <Error
       Condition="!Exists('$(MelonDir)/MelonLoader.dll')"
       Text="MelonLoader.dll not found under '$(MelonDir)'. Point -p:BonelabDir at your game install, populate Libs/, or pass -p:MelonDir explicitly. See README.md." />
+
+    <!--
+      Without this, an unresolvable Il2CppDir produces six MSB3245 warnings and
+      then dozens of "type or namespace 'UnityEngine' could not be found"
+      errors, which describe the symptom and bury the cause. Note that MSBuild
+      resolves HintPath relative to this project file, so a path that looks
+      right from the repository root will not be - pass an absolute one.
+    -->
+    <Error
+      Condition="'$(UseReferenceAssemblies)' != 'true' And !Exists('$(Il2CppDir)/UnityEngine.CoreModule.dll')"
+      Text="UnityEngine.CoreModule.dll not found under '$(Il2CppDir)'. If that path looks correct, check it is absolute: HintPath resolves relative to src/, not to your working directory. See README.md." />
     <Message
       Condition="'$(UseReferenceAssemblies)' == 'true'"
       Importance="high"

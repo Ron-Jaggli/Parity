@@ -17,6 +17,10 @@ Libs/
 # there is no reason to carry a copy in the repository.
 .melonloader/
 
+# IL2CPP assemblies pulled off a headset by scripts/pull-il2cpp.sh. Derived
+# from the game - never commit these.
+bonelab-asm/
+
 # IDE
 .vs/
 .idea/

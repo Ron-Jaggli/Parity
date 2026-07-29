@@ -50,8 +50,12 @@ if [ -n "${IL2CPP_DIR:-}" ]; then
     echo "       UnityEngine.CoreModule.dll there." >&2
     exit 1
   fi
-  echo "Building against the game's own assemblies in $IL2CPP_DIR"
-  args+=("-p:Il2CppDir=$IL2CPP_DIR" "-p:UseReferenceAssemblies=false")
+  # Must be absolute. MSBuild resolves HintPath relative to the project file in
+  # src/, not to the directory you ran this from, so a relative path here
+  # silently fails to resolve and surfaces as a wall of missing-type errors.
+  il2cpp_dir="$(cd "$IL2CPP_DIR" && pwd)"
+  echo "Building against the game's own assemblies in $il2cpp_dir"
+  args+=("-p:Il2CppDir=$il2cpp_dir" "-p:UseReferenceAssemblies=false")
 else
   echo "Building against the reference assemblies in refs/"
   args+=("-p:UseReferenceAssemblies=true")
