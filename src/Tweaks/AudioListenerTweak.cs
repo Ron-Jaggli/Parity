@@ -46,7 +46,7 @@ namespace Parity.Tweaks
 
         private void Prune()
         {
-            Il2CppReferenceArray<AudioListener> listeners =
+            Il2CppArrayBase<AudioListener> listeners =
                 UnityEngine.Object.FindObjectsOfType<AudioListener>();
 
             if (listeners.Length <= 1)
@@ -83,7 +83,7 @@ namespace Parity.Tweaks
             }
         }
 
-        private static AudioListener ChoosePreferred(Il2CppReferenceArray<AudioListener> listeners)
+        private static AudioListener ChoosePreferred(Il2CppArrayBase<AudioListener> listeners)
         {
             Camera main = Camera.main;
 

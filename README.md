@@ -108,7 +108,6 @@ setup — try them one at a time.
 | `AggressiveAnimatorCulling` | Larger than the default culling mode. | Uses `CullCompletely`, so animation events stop firing while offscreen. That can stall scripted behaviour. |
 | `DisableClothInterCollision` | Cheap, where cloth inter-collision is unused. | If any garment relies on it, you will see cloth pass through cloth. This is the one setting here that is openly visual. |
 | `RemoveDuplicateAudioListeners` | Small. | If the mod keeps the wrong listener the game goes quiet. It refuses to act unless it can positively identify which listener to keep, but the risk is not zero. |
-| `DisableUnityLogger` | Slightly more than stack trace stripping alone. | Hides genuine errors from you and from other mods. |
 | `TuneIncrementalGc` | Situational. | Only does anything if the game shipped with incremental GC enabled, and the shipped value is usually already sensible. |
 
 ### Explicitly not done
@@ -125,6 +124,10 @@ Named here so it is clear these were decisions, not oversights:
   effects look when they re-enter view.
 - **`asyncUploadTimeSlice`** — trades main-thread time per frame for faster
   uploads. Not obviously a win.
+- **Switching the game's logger off entirely** — was offered, and removed.
+  `ILogger.logEnabled` is projected read-only by the IL2CPP interop assemblies,
+  so there is no supported way to set it. Stack trace stripping gets most of the
+  saving anyway, and keeps the log readable.
 - **Fixed foveated rendering** — the biggest single lever on Quest, and the
   omission most likely to look like an oversight. Two reasons. Above the lowest
   level you can see it in your periphery, which is exactly what this mod refuses

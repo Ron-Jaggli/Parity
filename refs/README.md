@@ -36,6 +36,24 @@ engine call in the mod runs behind an exception guard that reports a failing
 call site once by name and then skips it, so a mismatch costs you one
 optimisation rather than the mod.
 
+## These have been checked against a real device
+
+The signatures here are no longer inferred. They were compiled against the
+IL2CPP assemblies from a Quest 3S copy of BONELAB (see the README's "Building
+against your own headset's assemblies"), and that pass corrected four things a
+reading of Unity's documentation had got wrong:
+
+| Assumed | Actually |
+|---|---|
+| `FindObjectsOfType<T>()` returns `Il2CppReferenceArray<T>` | returns `Il2CppArrayBase<T>` |
+| `ILogger.logEnabled` is settable | projected read-only |
+| `GarbageCollector.incrementalTimeSliceNanoseconds` is `uint` | `ulong` |
+| `UnityEngine.Object` needs no particular base | must derive from `Il2CppObjectBase` |
+
+None of those would have failed the build against these references before they
+were corrected, which is the whole argument for doing that pass. Redo it after
+any change here, and after a game update.
+
 ## Keeping these honest
 
 Two rules when editing:

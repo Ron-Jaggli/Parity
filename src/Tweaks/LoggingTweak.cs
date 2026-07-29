@@ -10,6 +10,12 @@ namespace Parity.Tweaks
     /// per frame pays for it every frame, and none of that work draws anything.
     /// Errors, asserts and exceptions are deliberately left alone so that when
     /// something does go wrong the log is still worth reading.
+    ///
+    /// This once also offered to switch the game's logger off entirely, which was
+    /// slightly faster again. It does not any more: <c>ILogger.logEnabled</c> is
+    /// projected read-only by the IL2CPP interop assemblies, so there is no
+    /// supported way to set it. That was a marginal, off-by-default saving whose
+    /// own description warned it would hide real errors, so it is no loss.
     /// </summary>
     internal sealed class LoggingTweak : Tweak
     {
@@ -18,16 +24,8 @@ namespace Parity.Tweaks
         private bool _captured;
         private StackTraceLogType _originalLog;
         private StackTraceLogType _originalWarning;
-        private bool _loggerWasEnabled = true;
-        private bool _loggerCaptured;
 
         public override void Apply()
-        {
-            ApplyStackTraces();
-            ApplyLoggerSwitch();
-        }
-
-        private void ApplyStackTraces()
         {
             ParityLog.Try(Name + ".stackTraces", () =>
             {
@@ -54,38 +52,17 @@ namespace Parity.Tweaks
             });
         }
 
-        private void ApplyLoggerSwitch()
-        {
-            ParityLog.Try(Name + ".unityLogger", () =>
-            {
-                if (!_loggerCaptured)
-                {
-                    _loggerWasEnabled = Debug.unityLogger.logEnabled;
-                    _loggerCaptured = true;
-                }
-
-                bool want = ParityPreferences.DisableUnityLogger.Value ? false : _loggerWasEnabled;
-                if (Debug.unityLogger.logEnabled != want)
-                {
-                    Debug.unityLogger.logEnabled = want;
-                }
-            });
-        }
-
         public override void Revert()
         {
+            if (!_captured)
+            {
+                return;
+            }
+
             ParityLog.Try(Name + ".revert", () =>
             {
-                if (_captured)
-                {
-                    Application.SetStackTraceLogType(LogType.Log, _originalLog);
-                    Application.SetStackTraceLogType(LogType.Warning, _originalWarning);
-                }
-
-                if (_loggerCaptured)
-                {
-                    Debug.unityLogger.logEnabled = _loggerWasEnabled;
-                }
+                Application.SetStackTraceLogType(LogType.Log, _originalLog);
+                Application.SetStackTraceLogType(LogType.Warning, _originalWarning);
             });
         }
     }

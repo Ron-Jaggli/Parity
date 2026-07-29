@@ -53,7 +53,7 @@ namespace Parity.Tweaks
         private readonly Dictionary<int, Tracked> _tracked = new Dictionary<int, Tracked>();
         private readonly List<int> _deadIds = new List<int>();
 
-        private Il2CppReferenceArray<Animator> _pending;
+        private Il2CppArrayBase<Animator> _pending;
         private int _cursor;
         private float _nextScan;
         private bool _active;

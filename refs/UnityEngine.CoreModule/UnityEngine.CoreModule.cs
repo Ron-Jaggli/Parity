@@ -26,7 +26,8 @@ namespace UnityEngine
 
     public interface ILogger
     {
-        bool logEnabled { get; set; }
+        // Read-only in the interop projection - there is no setter to call.
+        bool logEnabled { get; }
     }
 
     public class Debug
@@ -87,7 +88,8 @@ namespace UnityEngine
 
         public int GetInstanceID() => 0;
 
-        public static Il2CppReferenceArray<T> FindObjectsOfType<T>() where T : Object => null;
+        // Returns Il2CppArrayBase<T>, not Il2CppReferenceArray<T>.
+        public static Il2CppArrayBase<T> FindObjectsOfType<T>() where T : Object => null;
 
         public static bool operator ==(Object x, Object y) => ReferenceEquals(x, y);
 
@@ -159,6 +161,6 @@ namespace UnityEngine.Scripting
     {
         public static bool isIncremental => false;
 
-        public static uint incrementalTimeSliceNanoseconds { get; set; }
+        public static ulong incrementalTimeSliceNanoseconds { get; set; }
     }
 }

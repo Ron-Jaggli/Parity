@@ -177,7 +177,6 @@ namespace Parity
             int count = 0;
 
             Append(builder, ref count, ParityPreferences.StripLogStackTraces.Value, "log stack traces stripped");
-            Append(builder, ref count, ParityPreferences.DisableUnityLogger.Value, "unity logger off");
             Append(builder, ref count, ParityPreferences.UseOcclusionMesh.Value, "VR occlusion mesh");
             Append(builder, ref count, ParityPreferences.TuneAsyncUploads.Value, "async upload buffer");
             Append(builder, ref count, ParityPreferences.ClampMaximumDeltaTime.Value, "delta time clamp");

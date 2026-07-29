@@ -22,7 +22,6 @@ namespace Parity
 
         // Logging ------------------------------------------------------------
         public static MelonPreferences_Entry<bool> StripLogStackTraces { get; private set; }
-        public static MelonPreferences_Entry<bool> DisableUnityLogger { get; private set; }
 
         // VR render ----------------------------------------------------------
         public static MelonPreferences_Entry<bool> UseOcclusionMesh { get; private set; }
@@ -74,12 +73,6 @@ namespace Parity
                 "Stop Unity capturing a managed stack trace for every Debug.Log and " +
                 "Debug.LogWarning. Errors, asserts and exceptions keep their traces so " +
                 "crash reports stay useful. Purely a CPU saving - no visual change.");
-
-            DisableUnityLogger = Category.CreateEntry(
-                "DisableUnityLogger", false, "Disable Unity Logger Entirely",
-                "Silences the game's own Debug.Log calls completely. Slightly faster than " +
-                "stripping stack traces, but it also hides genuine errors from you and from " +
-                "other mods. Off by default.");
 
             // -- VR render --
             UseOcclusionMesh = Category.CreateEntry(

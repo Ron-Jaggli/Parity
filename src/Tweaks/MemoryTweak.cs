@@ -25,7 +25,7 @@ namespace Parity.Tweaks
         public override string Name => "Memory";
 
         private bool _captured;
-        private uint _originalSliceNanoseconds;
+        private ulong _originalSliceNanoseconds;
         private bool _warnedNotIncremental;
 
         public override void Apply()
@@ -55,7 +55,7 @@ namespace Parity.Tweaks
                     _captured = true;
                 }
 
-                uint want = _originalSliceNanoseconds;
+                ulong want = _originalSliceNanoseconds;
 
                 if (ParityPreferences.TuneIncrementalGc.Value)
                 {
@@ -63,7 +63,7 @@ namespace Parity.Tweaks
                         ParityPreferences.IncrementalGcSliceMicroseconds.Value,
                         MinSliceMicroseconds,
                         MaxSliceMicroseconds);
-                    want = (uint)microseconds * 1000u;
+                    want = (ulong)microseconds * 1000ul;
                 }
 
                 if (GarbageCollector.incrementalTimeSliceNanoseconds != want)
