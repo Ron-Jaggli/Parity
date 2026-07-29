@@ -4,7 +4,8 @@ namespace Parity
 {
     /// <summary>
     /// Every knob this mod exposes, written to
-    /// <c>BONELAB/UserData/MelonPreferences.cfg</c> on first run.
+    /// <c>UserData/MelonPreferences.cfg</c> in the loader's data folder on first
+    /// run. See the README for where that lands on a headset.
     ///
     /// Defaults are chosen so that enabling the mod is visually indistinguishable
     /// from vanilla. Anything that could conceivably alter a pixel, a sound, or a
@@ -93,9 +94,12 @@ namespace Parity
                 "textures and meshes causes fewer hitches. Same assets, same appearance.");
 
             AsyncUploadBufferMb = Category.CreateEntry(
-                "AsyncUploadBufferMb", 16, "Async Upload Buffer (MB)",
-                "Size of the async upload ring buffer. Unity's default is 4. Values above " +
-                "~32 mostly waste memory. Clamped to 4-128.");
+                "AsyncUploadBufferMb", 8, "Async Upload Buffer (MB)",
+                "Size of the async upload ring buffer. Unity's default is 4. The default " +
+                "here is deliberately modest because the buffer stays resident for the " +
+                "whole session and a headset has far less memory to spare than a PC - " +
+                "spending it here means not spending it on textures. Raise it if you still " +
+                "hitch walking into new areas. Clamped to 4-128.");
 
             // -- Frame pacing --
             ClampMaximumDeltaTime = Category.CreateEntry(
@@ -146,14 +150,17 @@ namespace Parity
                 "which can stall scripted behaviour. Off by default.");
 
             AnimatorRescanSeconds = Category.CreateEntry(
-                "AnimatorRescanSeconds", 15f, "Animator Rescan Interval (s)",
-                "How often to look for animators spawned since the last sweep. Clamped to " +
-                "2-300 seconds. Each sweep is spread over many frames.");
+                "AnimatorRescanSeconds", 30f, "Animator Rescan Interval (s)",
+                "How often to look for animators spawned since the last sweep. Finding every " +
+                "animator in a scene is itself not cheap on a mobile CPU, so this is spaced " +
+                "out further than a PC would need. Clamped to 2-300 seconds. Each sweep is " +
+                "spread over many frames.");
 
             AnimatorsPerFrame = Category.CreateEntry(
-                "AnimatorsPerFrame", 24, "Animators Per Frame",
+                "AnimatorsPerFrame", 16, "Animators Per Frame",
                 "Work budget for the sweep, so the optimiser never becomes the stutter. " +
-                "Clamped to 4-512.");
+                "Kept low for a mobile CPU: a sweep that takes a few more frames costs " +
+                "nothing, a sweep that drops one costs a lot. Clamped to 4-512.");
 
             AnimatorExcludeNames = Category.CreateEntry(
                 "AnimatorExcludeNames",
@@ -198,9 +205,10 @@ namespace Parity
             // -- Telemetry --
             FrameReportSeconds = Category.CreateEntry(
                 "FrameReportSeconds", 120f, "Frame Time Report Interval (s)",
-                "Write a frame time summary to the console this often, so you can measure " +
-                "whether any of this helped. Set to 0 to disable. Console only - nothing is " +
-                "drawn in the headset.");
+                "Write a frame time summary to the log this often, so you can measure " +
+                "whether any of this helped. On a headset there is no console, so this lands " +
+                "in MelonLoader's log file - see the README. Set to 0 to disable. Nothing is " +
+                "ever drawn in the headset.");
 
             Category.SaveToFile(false);
         }

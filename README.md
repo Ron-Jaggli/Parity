@@ -15,14 +15,38 @@ collision objects that are discarded on the next line.
 
 ---
 
+Built for **BONELAB on Quest**, standalone.
+
 ## Install
 
-1. Install [MelonLoader](https://melonwiki.xyz/) 0.6.x into BONELAB.
-2. Drop `Parity.dll` into `BONELAB/Mods/`.
-3. Launch once. Settings appear in `BONELAB/UserData/MelonPreferences.cfg`.
+Quest needs **[LemonLoader](https://github.com/LemonLoader/LemonLoader)**, not
+MelonLoader. MelonLoader is PC-only; LemonLoader is its Android port and runs
+the same net6 mods, which is why this one DLL works on a headset at all.
 
-Every setting can be edited while the game is running — changes are picked up
-within about two seconds, no restart needed.
+1. Install LemonLoader and patch BONELAB with it, following its own
+   instructions. This part is not specific to this mod — if BONELAB does not
+   boot with LemonLoader installed and no mods, fix that before adding Parity.
+2. Copy `Parity.dll` into the `Mods/` folder LemonLoader created in BONELAB's
+   data directory on the headset. Typically that is under
+   `Android/data/com.StressLevelZero.BONELAB/files/`, reachable over USB, `adb
+   push`, or a file manager on the headset — the exact path depends on your
+   LemonLoader version, so trust what LemonLoader created over what is written
+   here.
+3. Launch once. `UserData/MelonPreferences.cfg` appears next to `Mods/`.
+
+Every setting can be edited between launches by pulling that file, editing it,
+and pushing it back. On PC the mod picks up edits within about two seconds
+without a restart; on a headset you will not usually be editing it live, but the
+same mechanism means a changed file takes effect on the next launch with no
+further steps.
+
+### Reading the log
+
+There is no console on a headset. MelonLoader writes to `MelonLoader/Logs/`
+alongside `Mods/`, with the most recent run in `Latest.log`. That is where
+Parity's startup summary, its frame time reports, and any "this call is not
+available in your build" warnings go. Pull that file when you want to know what
+the mod actually did.
 
 ---
 
@@ -39,9 +63,9 @@ These are the ones that are safe to just leave alone.
 | **Collision callback reuse** | Reuses one `Collision` object across callbacks instead of allocating a fresh one per contact. | Same collisions, same physics. Removes a major source of garbage in a game built on physics, which means fewer GC pauses. |
 | **Offscreen animator culling** | Switches animators to `CullUpdateTransforms` so offscreen skeletons skip transform writes, IK and retargeting. | State machines still tick and animation events still fire, so scripted behaviour is unaffected. Only work on invisible skeletons is skipped, and Unity resumes on the frame the object becomes visible. |
 | **Delta time clamp** | Caps how much simulation one frame may catch up on, to 3 fixed timesteps. | Prevents a stutter feedback loop (see below). Nothing renders differently; the world just declines to fast-forward through a stall. |
-| **Async upload buffer** | Grows Unity's texture/mesh upload ring buffer from 4 MB to 16 MB and keeps it resident. | Same assets at the same quality, moved to the GPU in fewer steps. Fewer hitches walking into a new area. |
+| **Async upload buffer** | Grows Unity's texture/mesh upload ring buffer from 4 MB to 8 MB and keeps it resident. | Same assets at the same quality, moved to the GPU in fewer steps. Fewer hitches walking into a new area. |
 | **GC and asset unload on scene load** | Forces a collection and releases unreferenced assets while the loading screen is up. | Never runs during play. The point is *when* the pause lands, not whether it happens. |
-| **Frame time telemetry** | Logs frame time percentiles to the MelonLoader console every 2 minutes. | Console only. Deliberately not an on-screen counter — that would break the premise and cost frames of its own. |
+| **Frame time telemetry** | Logs frame time percentiles to MelonLoader's log file every 2 minutes. | Log file only. Deliberately not an on-screen counter — that would break the premise and cost frames of its own. |
 
 #### On the delta time clamp
 
@@ -82,12 +106,20 @@ Named here so it is clear these were decisions, not oversights:
   effects look when they re-enter view.
 - **`asyncUploadTimeSlice`** — trades main-thread time per frame for faster
   uploads. Not obviously a win.
+- **Fixed foveated rendering** — the biggest single lever on Quest, and the
+  omission most likely to look like an oversight. Two reasons. Above the lowest
+  level you can see it in your periphery, which is exactly what this mod refuses
+  to trade. And foveation is the kind of setting the game drives itself, often
+  varying it with load — a mod re-asserting a level on a timer would fight that
+  and could make the foveation level visibly pulse. If BONELAB exposes a
+  foveation option, use that one.
 
 ---
 
 ## Measuring it
 
-Parity writes a line like this to the MelonLoader console every two minutes:
+Parity writes a line like this to `MelonLoader/Logs/Latest.log` every two
+minutes:
 
 ```
 [Parity] Frame time over 120 s: 7204 frames, median 11.2 ms, p95 13.8 ms, p99 16.5 ms, worst 42.1 ms.
@@ -127,7 +159,9 @@ other than `Parity.dll` ends up in the output folder.
 
 ### Locally
 
-With BONELAB installed, the real assemblies are used automatically:
+Only useful if you have BONELAB on a PC — the reference assemblies exist
+precisely so that a Quest-only setup does not need this. With the game
+installed, the real assemblies are used automatically:
 
 ```bash
 dotnet build src/Parity.csproj -c Release
@@ -191,5 +225,5 @@ rather than at compile time.
 
 That gap is handled by design rather than by hope: every engine call runs behind
 an exception guard that reports a failing call site once by name and then skips
-it. A mismatch costs you one optimisation and a line in the MelonLoader console,
-not the mod. So treat the first launch as the real test — and read that console.
+it. A mismatch costs you one optimisation and a line in the log, not the mod. So
+treat the first launch as the real test — and read `Latest.log`.
