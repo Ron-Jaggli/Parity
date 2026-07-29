@@ -1,5 +1,7 @@
 // Reference assembly. Signatures mirror Unity 2021.3's UnityEngine.CoreModule.
 // See refs/README.md before editing.
+using System;
+using Il2CppInterop.Runtime.InteropTypes;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 
 namespace UnityEngine
@@ -75,8 +77,12 @@ namespace UnityEngine
         public static int CeilToInt(float f) => 0;
     }
 
-    public class Object
+    public class Object : Il2CppObjectBase
     {
+        public Object(IntPtr pointer) : base(pointer)
+        {
+        }
+
         public string name { get; set; }
 
         public int GetInstanceID() => 0;
@@ -99,6 +105,10 @@ namespace UnityEngine
 
     public class Component : Object
     {
+        public Component(IntPtr pointer) : base(pointer)
+        {
+        }
+
         public Transform transform => null;
 
         public GameObject gameObject => null;
@@ -108,15 +118,26 @@ namespace UnityEngine
 
     public class Transform : Component
     {
+        public Transform(IntPtr pointer) : base(pointer)
+        {
+        }
+
         public Transform root => null;
     }
 
     public sealed class GameObject : Object
     {
+        public GameObject(IntPtr pointer) : base(pointer)
+        {
+        }
     }
 
     public class Behaviour : Component
     {
+        public Behaviour(IntPtr pointer) : base(pointer)
+        {
+        }
+
         public bool enabled { get; set; }
 
         public bool isActiveAndEnabled => false;
@@ -124,6 +145,10 @@ namespace UnityEngine
 
     public sealed class Camera : Behaviour
     {
+        public Camera(IntPtr pointer) : base(pointer)
+        {
+        }
+
         public static Camera main => null;
     }
 }

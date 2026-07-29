@@ -49,3 +49,16 @@ Two rules when editing:
   the wrong number would silently do the wrong thing with no error anywhere.
 
 Add a member here only when the mod actually calls it.
+
+## `Il2CppObjectBase`
+
+`UnityEngine.Object` here derives from `Il2CppInterop.Runtime.InteropTypes.Il2CppObjectBase`,
+and every Unity type below it carries the `(IntPtr pointer)` constructor that
+implies. That is not decoration — it mirrors what IL2CPP interop assemblies
+actually look like, and it is load-bearing: `Il2CppReferenceArray<T>` constrains
+`T` to `Il2CppObjectBase`, so without it `Object.FindObjectsOfType<T>()` cannot
+be declared at all.
+
+Base classes never appear in method signatures, so this affects only whether
+these projects compile — not the IL emitted into `Parity.dll`. Any new Unity
+type added here needs to join the same chain.
