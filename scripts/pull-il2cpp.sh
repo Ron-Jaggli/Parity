@@ -20,7 +20,17 @@
 set -euo pipefail
 
 dest="${1:-./bonelab-asm}"
+pkg="com.StressLevelZero.BONELAB"
 marker="UnityEngine.CoreModule.dll"
+
+# LemonLoader keeps its data in a top-level /sdcard/MelonLoader/<package>
+# directory rather than under Android/data, which is what lets it stay readable
+# under scoped storage. The Android/data path is checked too in case a different
+# loader version uses it.
+ROOTS=(
+  "/sdcard/MelonLoader/$pkg"
+  "/sdcard/Android/data/$pkg/files"
+)
 
 if ! command -v adb >/dev/null 2>&1; then
   echo "error: 'adb' is not on PATH." >&2
@@ -40,72 +50,45 @@ if [ "$devices" -eq 0 ]; then
   exit 1
 fi
 
-echo "Looking for BONELAB's data directory..."
-pkg_dir=""
-for candidate in $(shell ls /sdcard/Android/data 2>/dev/null | grep -i -e bonelab -e stresslevelzero || true); do
-  pkg_dir="/sdcard/Android/data/$candidate"
-  echo "  found $pkg_dir"
-  break
+remote=""
+searched=()
+for root in "${ROOTS[@]}"; do
+  if ! shell ls -d "$root" >/dev/null 2>&1; then
+    continue
+  fi
+  searched+=("$root")
+  echo "Searching $root ..."
+  found=$(shell find "$root" -name "$marker" 2>/dev/null | head -1 || true)
+  if [ -n "$found" ]; then
+    remote="$found"
+    break
+  fi
 done
 
-if [ -z "$pkg_dir" ]; then
-  echo "error: no BONELAB package directory under /sdcard/Android/data." >&2
-  echo "       Either the game is not installed, or this headset stores app" >&2
-  echo "       data elsewhere. Look for it yourself with:" >&2
-  echo "         adb shell ls /sdcard/Android/data" >&2
-  exit 1
-fi
-
-echo "Searching for $marker..."
-# Android's toybox has find. If it is missing or scoped storage blocks the
-# walk, treat that as "not found" and let the diagnostics below show why.
-remote=$(shell find "$pkg_dir" -name "$marker" 2>/dev/null | head -1 || true)
-
 if [ -z "$remote" ]; then
-  echo "error: $marker is not anywhere under $pkg_dir." >&2
+  echo "error: $marker not found on the device." >&2
   echo >&2
 
-  # Look inside files/, not at the package root. Every Android app has exactly
-  # "cache" and "files" at the root whether or not it has been modded, so the
-  # root tells you nothing; LemonLoader's output lands under files/.
-  files_dir="$pkg_dir/files"
-  contents=$(shell ls -A "$files_dir" 2>/dev/null || true)
-
-  if [ -z "$contents" ]; then
-    echo "       $files_dir is empty or unreadable." >&2
-    echo "       If BONELAB has been launched at least once, this should not be" >&2
-    echo "       empty - so this may be scoped storage refusing the read rather" >&2
-    echo "       than the directory genuinely being bare." >&2
-  else
-    echo "       $files_dir contains:" >&2
-    echo "$contents" | sed 's/^/         /' >&2
+  if [ ${#searched[@]} -eq 0 ]; then
+    echo "       None of these directories exist:" >&2
+    printf '         %s\n' "${ROOTS[@]}" >&2
     echo >&2
-    if echo "$contents" | grep -qi 'melonloader\|^mods$\|userdata'; then
-      echo "       LemonLoader output is present, so the patch worked. What is" >&2
-      echo "       missing is the interop assemblies, which are generated on the" >&2
-      echo "       *first launch* of the patched game rather than by patching." >&2
-      echo "       Launch BONELAB, let it reach the menu, quit, and try again." >&2
-      echo >&2
-      echo "       Deeper listing:" >&2
-      shell ls -R "$files_dir" 2>/dev/null | head -60 | sed 's/^/         /' >&2
-    else
-      echo "       No MelonLoader or UserData folder, so BONELAB has most likely" >&2
-      echo "       not been patched yet. Run the LemonLoader installer app on" >&2
-      echo "       the headset and point it at BONELAB." >&2
-      echo >&2
-
-      # A managed DLL anywhere under files/ means some code-mod setup exists
-      # after all, just not where this script looked. Worth knowing before
-      # being told to install a loader that may already be there.
-      echo "       Checking for any managed assemblies elsewhere under files/..." >&2
-      stray=$(shell find "$files_dir" -name '*.dll' 2>/dev/null | head -20 || true)
-      if [ -n "$stray" ]; then
-        echo "       Found these, which suggests a loader is installed somewhere:" >&2
-        echo "$stray" | sed 's/^/         /' >&2
-      else
-        echo "       None found - consistent with an unpatched game." >&2
-      fi
-    fi
+    echo "       That means LemonLoader has not patched BONELAB. Run the" >&2
+    echo "       LemonLoader installer app on the headset and point it at" >&2
+    echo "       BONELAB." >&2
+  else
+    echo "       Searched:" >&2
+    printf '         %s\n' "${searched[@]}" >&2
+    echo >&2
+    echo "       LemonLoader is installed, so what is missing is the interop" >&2
+    echo "       assemblies themselves. They are generated on the *first" >&2
+    echo "       launch* of the patched game, not by patching. Launch BONELAB," >&2
+    echo "       let it reach the menu, quit, and try again." >&2
+    echo >&2
+    for root in "${searched[@]}"; do
+      echo "       $root:" >&2
+      shell ls -A "$root" 2>/dev/null | sed 's/^/         /' >&2
+    done
   fi
   exit 1
 fi
@@ -117,12 +100,12 @@ mkdir -p "$dest"
 echo "Pulling to $dest ..."
 adb pull "$remote_dir/." "$dest" >/dev/null
 
-count=$(find "$dest" -name '*.dll' | wc -l)
 if [ ! -f "$dest/$marker" ]; then
   echo "error: pull completed but $dest/$marker is missing." >&2
   exit 1
 fi
 
+count=$(find "$dest" -name '*.dll' | wc -l)
 echo
 echo "Pulled $count assemblies to $dest"
 echo

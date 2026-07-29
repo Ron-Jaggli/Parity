@@ -26,13 +26,21 @@ the same net6 mods, which is why this one DLL works on a headset at all.
 1. Install LemonLoader and patch BONELAB with it, following its own
    instructions. This part is not specific to this mod — if BONELAB does not
    boot with LemonLoader installed and no mods, fix that before adding Parity.
-2. Copy `Parity.dll` into the `Mods/` folder LemonLoader created in BONELAB's
-   data directory on the headset. Typically that is under
-   `Android/data/com.StressLevelZero.BONELAB/files/`, reachable over USB, `adb
-   push`, or a file manager on the headset — the exact path depends on your
-   LemonLoader version, so trust what LemonLoader created over what is written
-   here.
-3. Launch once. `UserData/MelonPreferences.cfg` appears next to `Mods/`.
+2. Copy `Parity.dll` into LemonLoader's mods folder on the headset:
+
+   ```
+   /sdcard/MelonLoader/com.StressLevelZero.BONELAB/Mods/
+   ```
+
+   Over MTP that is `Internal shared storage/MelonLoader/…`. If you have the
+   repository checked out, `./scripts/install.sh` pushes it there over adb.
+
+   > **Not to be confused with BONELAB's own `Mods` folder** under
+   > `Android/data/com.StressLevelZero.BONELAB/files/`. That one is the Marrow
+   > pallet system — avatars, maps, spawnables — and a code mod placed there
+   > does nothing.
+
+3. Launch once. `UserData/MelonPreferences.cfg` appears alongside `Mods/`.
 
 Every setting can be edited between launches by pulling that file, editing it,
 and pushing it back. On PC the mod picks up edits within about two seconds
@@ -42,11 +50,12 @@ further steps.
 
 ### Reading the log
 
-There is no console on a headset. MelonLoader writes to `MelonLoader/Logs/`
-alongside `Mods/`, with the most recent run in `Latest.log`. That is where
-Parity's startup summary, its frame time reports, and any "this call is not
-available in your build" warnings go. Pull that file when you want to know what
-the mod actually did.
+There is no console on a headset. MelonLoader writes its log alongside `Mods/`
+under `/sdcard/MelonLoader/com.StressLevelZero.BONELAB/`, with the most recent
+run in `Latest.log`. That is where Parity's startup summary, its frame time
+reports, and any "this call is not available in your build" warnings go.
+
+`./scripts/install.sh --log` pulls it and filters for Parity's lines.
 
 ---
 
@@ -211,8 +220,9 @@ real, rather than against the hand-written shapes in `refs/`:
 IL2CPP_DIR=./bonelab-asm ./scripts/build.sh
 ```
 
-The path differs between LemonLoader versions, so the script searches for the
-folder containing `UnityEngine.CoreModule.dll` rather than assuming one.
+The script searches for the folder containing `UnityEngine.CoreModule.dll`
+rather than assuming a path, since the layout differs between LemonLoader
+versions.
 
 **These assemblies only exist after LemonLoader has patched BONELAB *and* the
 patched game has been launched at least once** — that first launch is what
