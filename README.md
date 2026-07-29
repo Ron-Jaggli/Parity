@@ -207,14 +207,19 @@ bind against at runtime. Build against them and every Unity call is checked for
 real, rather than against the hand-written shapes in `refs/`:
 
 ```bash
-adb pull /sdcard/Android/data/com.StressLevelZero.BONELAB/files/MelonLoader/Il2CppAssemblies ~/bonelab-asm
-IL2CPP_DIR=~/bonelab-asm ./scripts/build.sh
+./scripts/pull-il2cpp.sh          # finds them over adb and pulls to ./bonelab-asm
+IL2CPP_DIR=./bonelab-asm ./scripts/build.sh
 ```
 
-The exact path depends on your LemonLoader version — find the folder containing
-`UnityEngine.CoreModule.dll` and point at that. If the build succeeds, every
-member this mod touches exists in your build of the game, and the only thing
-left to find out is whether the optimisations help.
+The path differs between LemonLoader versions, so the script searches for the
+folder containing `UnityEngine.CoreModule.dll` rather than assuming one.
+
+**These assemblies only exist after LemonLoader has patched BONELAB *and* the
+patched game has been launched at least once** — that first launch is what
+generates them. Before that, there is nothing to pull.
+
+If the build succeeds, every member this mod touches exists in your build of the
+game, and the only thing left to find out is whether the optimisations help.
 
 If it fails, that is a genuinely useful result: it names exactly which call
 differs on Quest, and it is a much better way to learn that than a line in

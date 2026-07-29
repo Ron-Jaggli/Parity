@@ -25,38 +25,21 @@ jobs:
         with:
           dotnet-version: '6.0.x'
 
-      # MelonLoader and Il2CppInterop are Apache-2.0 and published as release
-      # assets, so these are the real assemblies - the mod's use of that API is
-      # genuinely type-checked. The IL2CPP game assemblies are not obtainable
-      # here and are stood in for by refs/. See refs/README.md.
+      # Run the exact script a developer runs, rather than a CI-only copy of
+      # the same commands. A copy drifts: an earlier version of this workflow
+      # duplicated the DumpRefs invocation inline, so a bad flag in the script
+      # sailed through CI and only broke on a real machine.
       #
-      # This is the same script scripts/build.sh uses locally, so CI and a
-      # developer machine cannot drift on which MelonLoader is used.
-      - name: Fetch MelonLoader
+      # build.sh fetches MelonLoader (Apache-2.0, published as release assets,
+      # so these are the real assemblies and the mod's use of that API is
+      # genuinely type-checked), builds against refs/ since the game's IL2CPP
+      # assemblies are not obtainable here, and verifies the emitted assembly
+      # references - which a green compile alone cannot do, and which is the one
+      # thing the reference assembly approach depends on. See refs/README.md.
+      - name: Build and verify
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          melon_dir=$(python3 scripts/fetch_melonloader.py \
-            --tag "$MELONLOADER_TAG" \
-            --dest "$RUNNER_TEMP/ml")
-          echo "MELON_DIR=$melon_dir" >> "$GITHUB_ENV"
-
-      - name: Build
-        run: |
-          dotnet build src/Parity.csproj \
-            --configuration Release \
-            -p:UseReferenceAssemblies=true \
-            -p:MelonDir="$MELON_DIR"
-
-      # A green build cannot show whether the emitted IL names the assemblies
-      # the game actually provides, which is the one thing the reference
-      # assembly approach depends on. So check it directly.
-      - name: Verify assembly references
-        run: |
-          dotnet run --project tools/DumpRefs --configuration Release -- \
-            src/bin/Release/Parity.dll \
-            MelonLoader,Il2CppInterop.Runtime,Il2Cppmscorlib,UnityEngine.CoreModule,UnityEngine.PhysicsModule,UnityEngine.AnimationModule,UnityEngine.AudioModule,UnityEngine.VRModule
+        run: ./scripts/build.sh
 
       # The reference assemblies are compile-time shapes. If any of them landed
       # next to the mod they would shadow the game's real assemblies at runtime.
