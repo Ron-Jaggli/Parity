@@ -9,7 +9,7 @@ namespace Parity
     internal static class ParityBuildInfo
     {
         public const string Name = "Parity";
-        public const string Version = "1.0.0";
+        public const string Version = "1.1.0";
         public const string Author = "ron-jaggli";
 
         /// <summary>Prefix used for every line this mod writes to the console.</summary>

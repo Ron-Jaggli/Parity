@@ -40,12 +40,14 @@ namespace Parity
 
             _tweaks.Add(new LoggingTweak());
             _tweaks.Add(new VrRenderTweak());
+            _tweaks.Add(new RenderingTweak());
             _tweaks.Add(new StreamingTweak());
             _tweaks.Add(new FramePacingTweak());
             _tweaks.Add(new PhysicsTweak());
             _tweaks.Add(new MemoryTweak());
             _tweaks.Add(new AnimatorCullingTweak());
             _tweaks.Add(new AudioListenerTweak());
+            _tweaks.Add(new SkinnedMeshTweak());
 
             _frames = new FrameTimeMonitor();
             _enabled = ParityPreferences.Enabled.Value;
@@ -178,6 +180,10 @@ namespace Parity
 
             Append(builder, ref count, ParityPreferences.StripLogStackTraces.Value, "log stack traces stripped");
             Append(builder, ref count, ParityPreferences.UseOcclusionMesh.Value, "VR occlusion mesh");
+            Append(builder, ref count, ParityPreferences.EnsureOcclusionCulling.Value, "occlusion culling");
+            Append(builder, ref count, ParityPreferences.DisableRedundantVSync.Value, "no redundant vsync");
+            Append(builder, ref count, ParityPreferences.DisableRealtimeReflectionProbes.Value, "no realtime reflection probes");
+            Append(builder, ref count, ParityPreferences.DisableOffscreenSkinnedMeshUpdates.Value, "no offscreen skinning");
             Append(builder, ref count, ParityPreferences.TuneAsyncUploads.Value, "async upload buffer");
             Append(builder, ref count, ParityPreferences.ClampMaximumDeltaTime.Value, "delta time clamp");
             Append(builder, ref count, ParityPreferences.ReuseCollisionCallbacks.Value, "collision callback reuse");

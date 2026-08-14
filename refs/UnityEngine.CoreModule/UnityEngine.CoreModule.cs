@@ -49,6 +49,10 @@ namespace UnityEngine
         public static int asyncUploadBufferSize { get; set; }
 
         public static bool asyncUploadPersistentBuffer { get; set; }
+
+        public static int vSyncCount { get; set; }
+
+        public static bool realtimeReflectionProbes { get; set; }
     }
 
     public class Time
@@ -152,6 +156,24 @@ namespace UnityEngine
         }
 
         public static Camera main => null;
+
+        public bool useOcclusionCulling { get; set; }
+    }
+
+    public class Renderer : Component
+    {
+        public Renderer(IntPtr pointer) : base(pointer)
+        {
+        }
+    }
+
+    public class SkinnedMeshRenderer : Renderer
+    {
+        public SkinnedMeshRenderer(IntPtr pointer) : base(pointer)
+        {
+        }
+
+        public bool updateWhenOffscreen { get; set; }
     }
 }
 

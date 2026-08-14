@@ -26,6 +26,16 @@ namespace Parity
         // VR render ----------------------------------------------------------
         public static MelonPreferences_Entry<bool> UseOcclusionMesh { get; private set; }
 
+        // Rendering ----------------------------------------------------------
+        public static MelonPreferences_Entry<bool> EnsureOcclusionCulling { get; private set; }
+        public static MelonPreferences_Entry<bool> DisableRedundantVSync { get; private set; }
+        public static MelonPreferences_Entry<bool> DisableRealtimeReflectionProbes { get; private set; }
+
+        // Skinned meshes -----------------------------------------------------
+        public static MelonPreferences_Entry<bool> DisableOffscreenSkinnedMeshUpdates { get; private set; }
+        public static MelonPreferences_Entry<float> SkinnedMeshRescanSeconds { get; private set; }
+        public static MelonPreferences_Entry<int> SkinnedMeshesPerFrame { get; private set; }
+
         // Asset streaming ----------------------------------------------------
         public static MelonPreferences_Entry<bool> TuneAsyncUploads { get; private set; }
         public static MelonPreferences_Entry<int> AsyncUploadBufferMb { get; private set; }
@@ -79,6 +89,50 @@ namespace Parity
                 "UseOcclusionMesh", true, "Use VR Occlusion Mesh",
                 "Enable the headset's stencil mask so the GPU skips shading pixels that sit " +
                 "outside the lens area and can never be seen. Invisible by construction.");
+
+            // -- Rendering --
+            EnsureOcclusionCulling = Category.CreateEntry(
+                "EnsureOcclusionCulling", true, "Ensure Occlusion Culling",
+                "Switch occlusion culling on for any camera that has it off. It only ever " +
+                "skips renderers the baked data proves cannot be seen from where you are " +
+                "standing, so it can remove work but never remove anything visible - and if " +
+                "a scene ships no occlusion data it does nothing at all. Cameras that already " +
+                "had it on are left alone.");
+
+            DisableRedundantVSync = Category.CreateEntry(
+                "DisableRedundantVSync", true, "Disable Redundant VSync",
+                "In VR the headset's compositor decides when a frame is presented, so Unity's " +
+                "own vsync wait is a second gate on top of it - blocking on a desktop vblank " +
+                "that has nothing to do with the display you are looking through. Only applied " +
+                "while XR is running, never on a flat screen where vsync does a real job.");
+
+            DisableRealtimeReflectionProbes = Category.CreateEntry(
+                "DisableRealtimeReflectionProbes", false, "Disable Realtime Reflection Probes",
+                "A probe refreshing every frame re-renders the scene six times to fill a " +
+                "cubemap, which on a mobile GPU is ruinous, and community content sets it by " +
+                "accident more often than on purpose. Off by default because if a probe is " +
+                "genuinely meant to update, this freezes the reflection - and a frozen " +
+                "reflection is something you can see.");
+
+            // -- Skinned meshes --
+            DisableOffscreenSkinnedMeshUpdates = Category.CreateEntry(
+                "DisableOffscreenSkinnedMeshUpdates", false, "Stop Offscreen Skinned Mesh Updates",
+                "Clear updateWhenOffscreen on skinned meshes that set it. That flag makes Unity " +
+                "skin the mesh and recompute its bounds every frame whether or not it is " +
+                "visible - it is the standard fix for a mesh with wrong bounds, so it is common " +
+                "in community content and costly on a mobile CPU. The riskiest setting here: if " +
+                "a mesh really needs it, clearing it lets Unity cull the mesh while it is still " +
+                "on screen. Turn it on, look at your avatars and NPCs, turn it off if anything " +
+                "blinks out.");
+
+            SkinnedMeshRescanSeconds = Category.CreateEntry(
+                "SkinnedMeshRescanSeconds", 30f, "Skinned Mesh Rescan Interval (s)",
+                "How often to look for skinned meshes spawned since the last sweep. Clamped to " +
+                "2-300 seconds.");
+
+            SkinnedMeshesPerFrame = Category.CreateEntry(
+                "SkinnedMeshesPerFrame", 16, "Skinned Meshes Per Frame",
+                "Work budget for the sweep. Clamped to 4-512.");
 
             // -- Asset streaming --
             TuneAsyncUploads = Category.CreateEntry(
