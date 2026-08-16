@@ -55,8 +55,14 @@ mod's output, rather than MelonLoader's log with every mod you have installed
 interleaved:
 
 ```
-/sdcard/Android/data/com.StressLevelZero.BONELAB/files/Parity-Report.txt
+/sdcard/Parity/Parity-Report.txt
 ```
+
+A top-level folder on purpose: `Android/data/…` is where Unity would put it by
+default, and scoped storage makes that awkward to reach over MTP or from a file
+manager. If that directory cannot be created, Parity falls back to the game's own
+data folder and names the path it chose in the first line of the report.
+`ReportDirectory` in the config overrides the choice.
 
 A fresh file each session; the previous one is kept as `.prev`. It holds the
 startup summary, the frame time reports, and any "this call does not exist in
@@ -158,12 +164,20 @@ every scene change and at shutdown — so a short session, or one spent moving
 between areas, still produces numbers:
 
 ```
-Frame time over 60 s (interval): 3602 frames, median 11.2 ms, p95 13.8 ms, p99 16.5 ms, worst 42.1 ms.
-Frame time over 38 s (scene change): 2280 frames, median 11.4 ms, ...
+Frame time in 'Blank' over 60 s (interval): 3602 frames, median 11.2 ms, p95 13.8 ms, p99 16.5 ms, worst 42.1 ms.
+Frame time in 'Street Puncher' over 38 s (scene change): 2280 frames, median 11.4 ms, ...
 ```
 
-A window shorter than 300 frames is not reported, because percentiles over a
-handful of frames are noise.
+Each window names its scene, because BONELAB changes scene when it finishes
+initialising and on every map load — without the label you cannot tell which map
+a number belongs to, and a hub compared against a dense level is not a
+comparison at all.
+
+Two rules keep the numbers honest. The first five seconds after any scene load
+are ignored (`WarmUpSeconds`), since they are full of shader compilation and
+asset uploads that would put a spike in every window's p99. And a window shorter
+than 300 frames is not reported, because percentiles over a handful of frames
+are noise.
 
 Percentiles, not averages: in VR it is the worst 1% of frames you actually
 notice. To get a fair before/after, set `Enabled = false` and play the same area

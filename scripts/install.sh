@@ -64,10 +64,18 @@ echo "exist in your build, reported once by name."
 if [ "$want_log" = true ]; then
   echo
 
-  # Parity writes its own report next to the game's data. Prefer it: it contains
-  # only this mod's output, where MelonLoader's log interleaves every mod
-  # installed.
-  report=$(shell find "/sdcard/Android/data/$pkg" -name 'Parity-Report.txt' 2>/dev/null | head -1 || true)
+  # Parity writes its own report - only this mod's output, where MelonLoader's
+  # log interleaves every mod installed. It picks the first directory it can
+  # write, so look in the same order it does.
+  report=""
+  for root in "/sdcard/Parity" "/storage/emulated/0/Parity" "/sdcard/Android/data/$pkg"; do
+    found=$(shell find "$root" -name 'Parity-Report.txt' 2>/dev/null | head -1 || true)
+    if [ -n "$found" ]; then
+      report="$found"
+      break
+    fi
+  done
+
   if [ -n "$report" ]; then
     echo "Pulling $report"
     adb pull "$report" ./Parity-Report.txt >/dev/null
@@ -76,7 +84,8 @@ if [ "$want_log" = true ]; then
     echo
     echo "Saved to ./Parity-Report.txt (previous session: Parity-Report.txt.prev on the headset)"
   else
-    echo "No Parity-Report.txt yet."
+    echo "No Parity-Report.txt found. Searched /sdcard/Parity,"
+    echo "/storage/emulated/0/Parity and /sdcard/Android/data/$pkg."
   fi
 
   # MelonLoader's log is the fallback, and the place to look when the mod did not
