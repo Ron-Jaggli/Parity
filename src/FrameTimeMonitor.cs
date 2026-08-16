@@ -30,7 +30,8 @@ namespace Parity
         private float _worstMs;
         private float _windowStart;
         private bool _windowOpen;
-        private bool _skipNextSample;
+        private float _warmUpUntil;
+        private string _sceneName = "startup";
 
         /// <summary>
         /// Emits a report for the window so far, if there is enough of it to mean
@@ -61,13 +62,20 @@ namespace Parity
         /// Drops the current window. Called on scene load so that the loading hitch
         /// itself does not contaminate a report about steady-state play.
         /// </summary>
-        public void Reset()
+        public void Reset(float now, string sceneName)
         {
             Array.Clear(_buckets, 0, _buckets.Length);
             _samples = 0;
             _worstMs = 0f;
             _windowOpen = false;
-            _skipNextSample = true;
+            _sceneName = string.IsNullOrEmpty(sceneName) ? "unknown" : sceneName;
+
+            // BONELAB changes scene when it finishes initialising and on every map
+            // load, and the seconds after one are full of shader compilation, asset
+            // uploads and first-frame allocation. Measuring those would put a spike
+            // in every single window's p99 and tell us nothing about how the game
+            // actually runs - so let it settle before counting anything.
+            _warmUpUntil = now + Mathf.Clamp(ParityPreferences.WarmUpSeconds.Value, 0f, 60f);
         }
 
         public void Sample(float now, float unscaledDeltaSeconds)
@@ -84,10 +92,10 @@ namespace Parity
                 _windowStart = now;
             }
 
-            // The first frame after a reset spans the load itself.
-            if (_skipNextSample)
+            // Still settling after a scene load.
+            if (now < _warmUpUntil)
             {
-                _skipNextSample = false;
+                _windowStart = now;
                 return;
             }
 
@@ -123,7 +131,8 @@ namespace Parity
         private void Report(float windowSeconds, string reason)
         {
             string summary =
-                "Frame time over " + windowSeconds.ToString("F0") + " s (" + reason + "): " +
+                "Frame time in '" + _sceneName + "' over " + windowSeconds.ToString("F0") +
+                " s (" + reason + "): " +
                 _samples + " frames, median " + Percentile(0.50f).ToString("F1") +
                 " ms, p95 " + Percentile(0.95f).ToString("F1") +
                 " ms, p99 " + Percentile(0.99f).ToString("F1") +

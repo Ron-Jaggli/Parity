@@ -67,6 +67,8 @@ namespace Parity
 
         // Telemetry ----------------------------------------------------------
         public static MelonPreferences_Entry<float> FrameReportSeconds { get; private set; }
+        public static MelonPreferences_Entry<float> WarmUpSeconds { get; private set; }
+        public static MelonPreferences_Entry<string> ReportDirectory { get; private set; }
 
         public static void Register()
         {
@@ -256,6 +258,22 @@ namespace Parity
                 "whether any of this helped. On a headset there is no console, so this lands " +
                 "in MelonLoader's log file - see the README. Set to 0 to disable. Nothing is " +
                 "ever drawn in the headset.");
+
+            WarmUpSeconds = Category.CreateEntry(
+                "WarmUpSeconds", 5f, "Warm-Up After Scene Load (s)",
+                "Ignore this many seconds of frames after every scene load before measuring. " +
+                "BONELAB changes scene when it finishes initialising and on every map load, " +
+                "and the seconds afterwards are full of shader compilation and asset uploads - " +
+                "counting those would put a spike in every window's p99 and say nothing about " +
+                "how the game actually runs. Clamped to 0-60.");
+
+            ReportDirectory = Category.CreateEntry(
+                "ReportDirectory", "", "Report Directory",
+                "Where to write Parity-Report.txt. Leave empty to choose automatically: " +
+                "/sdcard/Parity first because it is reachable over MTP and from a file " +
+                "manager, falling back to the game's own data folder, which always works but " +
+                "which scoped storage can make awkward to read. The chosen path is named in " +
+                "the first line of the log.");
 
             Category.SaveToFile(false);
         }

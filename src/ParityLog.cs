@@ -42,20 +42,71 @@ namespace Parity
         }
 
         /// <summary>
-        /// Starts a fresh report for this session, keeping the previous one as
-        /// <c>.prev</c>. A file that grew across every session would be the thing
-        /// nobody wants to read, which defeats the point of having it.
+        /// Picks somewhere to write, then starts a fresh report for this session,
+        /// keeping the previous one as <c>.prev</c>. A file that grew across every
+        /// session would be the thing nobody wants to read, which defeats the point.
+        ///
+        /// Directory choice matters more than it looks. Unity's persistentDataPath
+        /// lands under <c>Android/data/&lt;package&gt;/</c>, which scoped storage
+        /// makes awkward to reach from a file manager or MTP - the app can write
+        /// there but you may not be able to read it. A top-level folder is
+        /// reachable, and the patched game evidently holds the permission for one,
+        /// since LemonLoader writes to /sdcard/MelonLoader itself. So try the
+        /// convenient places first and fall back to the one that always works.
         /// </summary>
         private static void OpenReportFile()
         {
-            try
+            string configured = ParityPreferences.ReportDirectory.Value;
+            if (!string.IsNullOrEmpty(configured) && TryOpenIn(configured))
             {
-                string directory = Application.persistentDataPath;
-                if (string.IsNullOrEmpty(directory))
+                return;
+            }
+
+            foreach (string candidate in CandidateDirectories())
+            {
+                if (TryOpenIn(candidate))
                 {
-                    _fileUnavailable = true;
                     return;
                 }
+            }
+
+            _fileUnavailable = true;
+            Warn("Could not write a report file anywhere. MelonLoader's own log still " +
+                 "has everything Parity logs.");
+        }
+
+        private static IEnumerable<string> CandidateDirectories()
+        {
+            // Reachable over MTP and by any file manager, and where the user asked
+            // for it to be.
+            yield return "/sdcard/Parity";
+
+            // The same location under its other mount name, in case /sdcard is not
+            // symlinked on this device.
+            yield return "/storage/emulated/0/Parity";
+
+            // Always writable by the app; may be awkward for a human to read.
+            string persistent = null;
+            try
+            {
+                persistent = Application.persistentDataPath;
+            }
+            catch (Exception)
+            {
+                persistent = null;
+            }
+
+            if (!string.IsNullOrEmpty(persistent))
+            {
+                yield return persistent;
+            }
+        }
+
+        private static bool TryOpenIn(string directory)
+        {
+            try
+            {
+                Directory.CreateDirectory(directory);
 
                 string path = Path.Combine(directory, ReportFileName);
 
@@ -77,12 +128,14 @@ namespace Parity
 
                 _reportPath = path;
                 Info("Writing a report to " + path);
+                return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _fileUnavailable = true;
-                Warn("Could not open a report file (" + ex.GetType().Name + ": " + ex.Message +
-                     "). Console and MelonLoader's own log still have everything.");
+                // Expected for a directory this process may not create or write.
+                // The next candidate gets a turn; only exhausting them all is a
+                // problem worth reporting.
+                return false;
             }
         }
 

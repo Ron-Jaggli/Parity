@@ -64,8 +64,12 @@ namespace Parity
         {
             // Report what the previous scene measured before discarding it, so
             // moving between areas produces numbers rather than losing them.
-            ParityLog.Try("frames.flush", () => _frames.Flush(Time.realtimeSinceStartup, "scene change"));
-            _frames.Reset();
+            ParityLog.Try("frames.flush", () =>
+            {
+                float now = Time.realtimeSinceStartup;
+                _frames.Flush(now, "scene change");
+                _frames.Reset(now, sceneName);
+            });
 
             if (!ParityPreferences.Enabled.Value)
             {
