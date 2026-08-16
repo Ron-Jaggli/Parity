@@ -251,7 +251,7 @@ namespace Parity
 
             // -- Telemetry --
             FrameReportSeconds = Category.CreateEntry(
-                "FrameReportSeconds", 120f, "Frame Time Report Interval (s)",
+                "FrameReportSeconds", 60f, "Frame Time Report Interval (s)",
                 "Write a frame time summary to the log this often, so you can measure " +
                 "whether any of this helped. On a headset there is no console, so this lands " +
                 "in MelonLoader's log file - see the README. Set to 0 to disable. Nothing is " +

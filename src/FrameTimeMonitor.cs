@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Parity
 {
     /// <summary>
-    /// Console-only frame time telemetry, so the effect of this mod can be measured
-    /// rather than imagined.
+    /// Frame time telemetry, so the effect of this mod can be measured rather than
+    /// imagined. Written to the log and to Parity-Report.txt.
     ///
     /// Deliberately not an on-screen counter: this mod's whole premise is that it
     /// changes nothing you can see, and drawing an overlay in the headset would
@@ -22,6 +22,8 @@ namespace Parity
         private const int BucketCount = 161;
         private const float OverflowThresholdMs = (BucketCount - 1) * BucketMilliseconds;
 
+        private const int MinimumSamplesToReport = 300;
+
         private readonly int[] _buckets = new int[BucketCount];
 
         private int _samples;
@@ -29,6 +31,31 @@ namespace Parity
         private float _windowStart;
         private bool _windowOpen;
         private bool _skipNextSample;
+
+        /// <summary>
+        /// Emits a report for the window so far, if there is enough of it to mean
+        /// anything, and starts a new one.
+        ///
+        /// Without this, a report only ever appeared after a full uninterrupted
+        /// interval, and a scene change threw the window away - so a short session,
+        /// or one spent moving between areas, produced no numbers at all. That is
+        /// the opposite of useful when the whole point is to find out whether any of
+        /// this helped.
+        /// </summary>
+        public void Flush(float now, string reason)
+        {
+            if (_samples < MinimumSamplesToReport)
+            {
+                return;
+            }
+
+            Report(now - _windowStart, reason);
+
+            Array.Clear(_buckets, 0, _buckets.Length);
+            _samples = 0;
+            _worstMs = 0f;
+            _windowStart = now;
+        }
 
         /// <summary>
         /// Drops the current window. Called on scene load so that the loading hitch
@@ -84,7 +111,7 @@ namespace Parity
 
             if (now - _windowStart >= interval && _samples > 0)
             {
-                Report(now - _windowStart);
+                Report(now - _windowStart, "interval");
 
                 Array.Clear(_buckets, 0, _buckets.Length);
                 _samples = 0;
@@ -93,10 +120,10 @@ namespace Parity
             }
         }
 
-        private void Report(float windowSeconds)
+        private void Report(float windowSeconds, string reason)
         {
             string summary =
-                "Frame time over " + windowSeconds.ToString("F0") + " s: " +
+                "Frame time over " + windowSeconds.ToString("F0") + " s (" + reason + "): " +
                 _samples + " frames, median " + Percentile(0.50f).ToString("F1") +
                 " ms, p95 " + Percentile(0.95f).ToString("F1") +
                 " ms, p99 " + Percentile(0.99f).ToString("F1") +

@@ -57,20 +57,35 @@ echo
 echo "Installed. Launch BONELAB, play for a few minutes, then:"
 echo "  ./scripts/install.sh --log"
 echo
-echo "Look for a line starting with [Parity] - the startup summary lists which"
-echo "optimisations are active, and any engine call that does not exist in your"
-echo "build is reported there once by name."
+echo "That pulls Parity-Report.txt, which contains only this mod's output: the"
+echo "startup summary, the frame time reports, and any engine call that does not"
+echo "exist in your build, reported once by name."
 
 if [ "$want_log" = true ]; then
   echo
-  log=$(shell find "/sdcard/MelonLoader/$pkg" -iname 'Latest.log' 2>/dev/null | head -1 || true)
-  if [ -z "$log" ]; then
-    echo "No Latest.log found yet - the game has to run once first."
-    exit 0
+
+  # Parity writes its own report next to the game's data. Prefer it: it contains
+  # only this mod's output, where MelonLoader's log interleaves every mod
+  # installed.
+  report=$(shell find "/sdcard/Android/data/$pkg" -name 'Parity-Report.txt' 2>/dev/null | head -1 || true)
+  if [ -n "$report" ]; then
+    echo "Pulling $report"
+    adb pull "$report" ./Parity-Report.txt >/dev/null
+    echo
+    cat ./Parity-Report.txt
+    echo
+    echo "Saved to ./Parity-Report.txt (previous session: Parity-Report.txt.prev on the headset)"
+  else
+    echo "No Parity-Report.txt yet."
   fi
-  echo "Pulling $log"
-  adb pull "$log" ./Latest.log >/dev/null
-  echo
-  echo "Parity lines:"
-  grep -i 'parity' ./Latest.log || echo "  (none - the mod did not load, see ./Latest.log)"
+
+  # MelonLoader's log is the fallback, and the place to look when the mod did not
+  # load at all - in which case it never got to write a report of its own.
+  log=$(shell find "/sdcard/MelonLoader/$pkg" -iname 'Latest.log' 2>/dev/null | head -1 || true)
+  if [ -n "$log" ]; then
+    adb pull "$log" ./Latest.log >/dev/null
+    echo
+    echo "MelonLoader log saved to ./Latest.log. Parity lines in it:"
+    grep -i 'parity' ./Latest.log || echo "  (none - the mod did not load; check ./Latest.log for why)"
+  fi
 fi

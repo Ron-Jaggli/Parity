@@ -62,6 +62,9 @@ namespace Parity
 
         public override void OnSceneWasInitialized(int buildIndex, string sceneName)
         {
+            // Report what the previous scene measured before discarding it, so
+            // moving between areas produces numbers rather than losing them.
+            ParityLog.Try("frames.flush", () => _frames.Flush(Time.realtimeSinceStartup, "scene change"));
             _frames.Reset();
 
             if (!ParityPreferences.Enabled.Value)
@@ -138,6 +141,9 @@ namespace Parity
 
         public override void OnDeinitializeMelon()
         {
+            // Last chance to say anything: on a headset the session usually ends by
+            // the process being killed, and an unreported window is a wasted session.
+            ParityLog.Try("frames.final", () => _frames.Flush(Time.realtimeSinceStartup, "shutdown"));
             RevertAll();
         }
 

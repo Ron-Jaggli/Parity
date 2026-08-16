@@ -37,6 +37,8 @@ namespace UnityEngine
 
     public class Application
     {
+        public static string persistentDataPath => null;
+
         public static StackTraceLogType GetStackTraceLogType(LogType logType) => StackTraceLogType.None;
 
         public static void SetStackTraceLogType(LogType logType, StackTraceLogType stackTraceType)

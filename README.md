@@ -50,12 +50,21 @@ further steps.
 
 ### Reading the log
 
-There is no console on a headset. MelonLoader writes its log alongside `Mods/`
-under `/sdcard/MelonLoader/com.StressLevelZero.BONELAB/`, with the most recent
-run in `Latest.log`. That is where Parity's startup summary, its frame time
-reports, and any "this call is not available in your build" warnings go.
+There is no console on a headset, so Parity writes its own report — only this
+mod's output, rather than MelonLoader's log with every mod you have installed
+interleaved:
 
-`./scripts/install.sh --log` pulls it and filters for Parity's lines.
+```
+/sdcard/Android/data/com.StressLevelZero.BONELAB/files/Parity-Report.txt
+```
+
+A fresh file each session; the previous one is kept as `.prev`. It holds the
+startup summary, the frame time reports, and any "this call does not exist in
+your build" warning. `./scripts/install.sh --log` pulls it and prints it.
+
+MelonLoader's own log is still at `/sdcard/MelonLoader/com.StressLevelZero.BONELAB/`
+in `Latest.log`, and it is the place to look if Parity never loaded — in that
+case it never got to write a report of its own. `--log` pulls that too.
 
 ---
 
@@ -144,12 +153,17 @@ Named here so it is clear these were decisions, not oversights:
 
 ## Measuring it
 
-Parity writes a line like this to `MelonLoader/Logs/Latest.log` every two
-minutes:
+Parity writes a line like this to `Parity-Report.txt` every minute, and also on
+every scene change and at shutdown — so a short session, or one spent moving
+between areas, still produces numbers:
 
 ```
-[Parity] Frame time over 120 s: 7204 frames, median 11.2 ms, p95 13.8 ms, p99 16.5 ms, worst 42.1 ms.
+Frame time over 60 s (interval): 3602 frames, median 11.2 ms, p95 13.8 ms, p99 16.5 ms, worst 42.1 ms.
+Frame time over 38 s (scene change): 2280 frames, median 11.4 ms, ...
 ```
+
+A window shorter than 300 frames is not reported, because percentiles over a
+handful of frames are noise.
 
 Percentiles, not averages: in VR it is the worst 1% of frames you actually
 notice. To get a fair before/after, set `Enabled = false` and play the same area
