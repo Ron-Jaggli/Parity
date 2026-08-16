@@ -85,7 +85,7 @@ These are the ones that are safe to just leave alone.
 | **Delta time clamp** | Caps how much simulation one frame may catch up on, to 3 fixed timesteps. | Prevents a stutter feedback loop (see below). Nothing renders differently; the world just declines to fast-forward through a stall. |
 | **Async upload buffer** | Grows Unity's texture/mesh upload ring buffer from 4 MB to 8 MB and keeps it resident. | Same assets at the same quality, moved to the GPU in fewer steps. Fewer hitches walking into a new area. |
 | **GC and asset unload on scene load** | Forces a collection and releases unreferenced assets while the loading screen is up. | Never runs during play. The point is *when* the pause lands, not whether it happens. |
-| **Frame time telemetry** | Logs frame time percentiles to MelonLoader's log file every 2 minutes. | Log file only. Deliberately not an on-screen counter — that would break the premise and cost frames of its own. |
+| **Frame time telemetry** | Writes frame time percentiles to `Parity-Report.txt` every minute, on scene change, and at shutdown. | File only. Deliberately not an on-screen counter — that would break the premise and cost frames of its own. |
 
 #### On the occlusion mesh
 
